@@ -103,9 +103,6 @@ function RoleAccessGate({
   return (
     <main className="access-page">
       <section className="access-card" aria-labelledby="access-title">
-        <div className="access-mark" aria-hidden="true">
-          A
-        </div>
         <div className="access-copy">
           <p className="access-eyebrow">{role === "admin" ? "Admin" : "Guest"} access</p>
           <h1 id="access-title">Enter password</h1>
