@@ -5,6 +5,7 @@ import {
   type AppExamples,
 } from "@/lib/app-examples";
 import { getDatabase } from "@/lib/db";
+import { readLocalSettings, writeLocalSettings } from "@/lib/local-settings";
 
 type SettingsRow = {
   app_name: string | null;
@@ -25,6 +26,10 @@ function formatSettings(row: SettingsRow | undefined) {
 export async function GET() {
   if (!(await hasAdminAccess())) {
     return Response.json({ error: "Admin access required." }, { status: 401 });
+  }
+
+  if (process.env.LOCAL_DEV === "true") {
+    return Response.json(await readLocalSettings());
   }
 
   try {
@@ -104,21 +109,27 @@ export async function PUT(request: Request) {
 
   const appExamples = normalizeAppExamples(body.appExamples) as AppExamples;
 
+  if (body.guestAccessEnabled && !guestPassword) {
+    return Response.json(
+      { error: "Set a guest password before enabling guest protection." },
+      { status: 400 },
+    );
+  }
+
+  const settings = {
+    appName,
+    guestAccessEnabled: body.guestAccessEnabled,
+    guestPassword,
+    appExamples,
+  };
+
+  if (process.env.LOCAL_DEV === "true") {
+    await writeLocalSettings(settings);
+    return Response.json(settings);
+  }
+
   try {
     const sql = getDatabase();
-    if (body.guestAccessEnabled && !guestPassword) {
-      return Response.json(
-        { error: "Set a guest password before enabling guest protection." },
-        { status: 400 },
-      );
-    }
-
-    const settings = {
-      appName,
-      guestAccessEnabled: body.guestAccessEnabled,
-      guestPassword,
-      appExamples,
-    };
     const serialized = JSON.stringify(settings);
     const rows = await sql`
       UPDATE app_settings

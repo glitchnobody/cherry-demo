@@ -19,7 +19,7 @@ const dockApps = [
   { key: "whatsapp", name: "WhatsApp", icon: "/assets/whatsapp.png" },
   { key: "discord", name: "Discord", icon: "/assets/discord.png" },
   { key: "miro", name: "Miro", icon: "/assets/miro.png" },
-  { key: "ollama", name: "Ollama", icon: "/assets/ollama.png" },
+  { key: "chatgpt", name: "ChatGPT", icon: "/assets/chatgpt.png" },
   { key: "cursor", name: "Cursor", icon: "/assets/cursor.png" },
   { key: "scribble", name: "Scribble", icon: "/assets/scribble.png" },
 ] satisfies Array<{ key: AppExampleKey; name: string; icon: string }>;

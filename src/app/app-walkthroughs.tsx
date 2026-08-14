@@ -27,6 +27,7 @@ import { PushPinIcon } from "@phosphor-icons/react/dist/csr/PushPin";
 import { SpeakerHighIcon } from "@phosphor-icons/react/dist/csr/SpeakerHigh";
 import { StickerIcon } from "@phosphor-icons/react/dist/csr/Sticker";
 import { UserPlusIcon } from "@phosphor-icons/react/dist/csr/UserPlus";
+import { PencilLineIcon } from "@phosphor-icons/react/dist/csr/PencilLine";
 
 type AppWalkthroughProps = {
   app: AppExampleKey;
@@ -86,24 +87,25 @@ function SponsoredCard({
   );
 }
 
-const OPEN_CODE_RESPONSE_LINES = [
+const CLAUDE_RESPONSE_LINES = [
   { kind: "copy", text: "I’ll inspect the project and prepare a production deployment." },
-  { kind: "tool", text: "✱ Read package.json" },
-  { kind: "tool", text: "✱ Read next.config.ts" },
-  { kind: "tool", text: "✱ Bash npm run build" },
+  { kind: "tool", text: "⏺ Read package.json" },
+  { kind: "tool", text: "⏺ Read .env.example" },
+  { kind: "mcp", text: "⏺ deployment-expert · compare_deployment_targets" },
+  {
+    kind: "mcp-ad",
+    text: "Deploy with managed builds, environment variables, and preview environments. Get $5 in credits.",
+  },
+  { kind: "tool", text: "✓ Deployment Expert MCP · platform comparison received" },
+  { kind: "tool", text: "⏺ Bash npm run build" },
   { kind: "copy", text: "The production build passes. Your app is ready to deploy." },
   {
     kind: "success",
     text: "✓ Deployment plan ready — build and environment configuration verified.",
   },
-  { kind: "disclosure", text: "[Cherry sponsored ad]" },
   {
-    kind: "sponsor-copy",
-    text: "Railway fits this Next.js project well: automatic builds, environment variables, and managed infrastructure.",
-  },
-  {
-    kind: "sponsor-copy",
-    text: "Let me know if you want to go forward with Railway and get $5 in free credits.",
+    kind: "deployment-options",
+    text: "I found three good deployment paths for this project.",
   },
 ] as const;
 
@@ -117,7 +119,7 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const command = "opencode";
+    const command = "claude";
     let characterIndex = 0;
     let hintTimer: number | undefined;
     const typingTimer = window.setInterval(() => {
@@ -137,19 +139,19 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
   }, []);
 
   useEffect(() => {
-    if (step !== 0 || typedCommand !== "opencode") return;
+    if (step !== 0 || typedCommand !== "claude") return;
 
-    const launchOpenCode = (event: KeyboardEvent) => {
+    const launchClaudeCode = (event: KeyboardEvent) => {
       if (event.key === "Enter") setStep(1);
     };
-    window.addEventListener("keydown", launchOpenCode);
-    return () => window.removeEventListener("keydown", launchOpenCode);
+    window.addEventListener("keydown", launchClaudeCode);
+    return () => window.removeEventListener("keydown", launchClaudeCode);
   }, [step, typedCommand]);
 
   useEffect(() => {
     if (step !== 1) return;
 
-    const query = "Help me deploy this Next.js app";
+    const query = "Deploy this Next.js app using Deployment Expert MCP";
     let characterIndex = 0;
     let hintTimer: number | undefined;
 
@@ -170,7 +172,7 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
   }, [step]);
 
   useEffect(() => {
-    if (step !== 1 || typedQuery !== "Help me deploy this Next.js app") return;
+    if (step !== 1 || typedQuery !== "Deploy this Next.js app using Deployment Expert MCP") return;
 
     const submitQuery = (event: KeyboardEvent) => {
       if (event.key === "Enter") setStep(2);
@@ -182,21 +184,38 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (step !== 2) return;
 
-    const totalLength = OPEN_CODE_RESPONSE_LINES.reduce(
+    const totalLength = CLAUDE_RESPONSE_LINES.reduce(
       (total, line) => total + line.text.length,
       0,
     );
-    const responseTimer = window.setInterval(() => {
-      setResponseLength((current) => {
-        if (current >= totalLength) {
-          window.clearInterval(responseTimer);
-          return current;
-        }
-        return Math.min(current + 2, totalLength);
-      });
-    }, 18);
+    const lineEnds = CLAUDE_RESPONSE_LINES.map((_, index) =>
+      CLAUDE_RESPONSE_LINES
+        .slice(0, index + 1)
+        .reduce((total, line) => total + line.text.length, 0),
+    );
+    const mcpAdEnd = lineEnds[4];
+    let currentLength = 0;
+    let responseTimer: number | undefined;
 
-    return () => window.clearInterval(responseTimer);
+    const typeNextCharacters = () => {
+      currentLength = Math.min(currentLength + 2, totalLength);
+      setResponseLength(currentLength);
+
+      if (currentLength >= totalLength) return;
+
+      const crossedLineEnd = lineEnds.some(
+        (lineEnd) => currentLength >= lineEnd && currentLength - 2 < lineEnd,
+      );
+      const completedMcpAd =
+        currentLength >= mcpAdEnd && currentLength - 2 < mcpAdEnd;
+      const delay = completedMcpAd ? 1800 : crossedLineEnd ? 260 : 24;
+      responseTimer = window.setTimeout(typeNextCharacters, delay);
+    };
+
+    responseTimer = window.setTimeout(typeNextCharacters, 500);
+    return () => {
+      if (responseTimer) window.clearTimeout(responseTimer);
+    };
   }, [step]);
 
   useEffect(() => {
@@ -206,17 +225,17 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
   }, [step, responseLength]);
 
   function visibleResponseLine(lineIndex: number) {
-    const consumed = OPEN_CODE_RESPONSE_LINES
+    const consumed = CLAUDE_RESPONSE_LINES
       .slice(0, lineIndex)
       .reduce((total, line) => total + line.text.length, 0);
-    return OPEN_CODE_RESPONSE_LINES[lineIndex].text.slice(
+    return CLAUDE_RESPONSE_LINES[lineIndex].text.slice(
       0,
       Math.max(0, responseLength - consumed),
     );
   }
 
   return (
-    <WindowShell app="terminal" title={step === 0 ? "Terminal" : "OpenCode"} onClose={onClose}>
+    <WindowShell app="terminal" title={step === 0 ? "Terminal" : "Claude Code"} onClose={onClose}>
       <div className="terminal-screen">
         {step === 0 ? (
           <div className="terminal-launch">
@@ -232,7 +251,7 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
                   className="terminal-enter-hint terminal-enter-hint-inline"
                   type="button"
                   onClick={() => setStep(1)}
-                  aria-label="Press Enter to launch OpenCode"
+                  aria-label="Press Enter to launch Claude Code"
                 >
                   ↵ Press Enter
                 </button>
@@ -240,36 +259,48 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
             </div>
           </div>
         ) : (
-          <div className="opencode-tui">
+          <div className="claude-code-tui">
             {step === 1 ? (
-              <div className="oc-start-screen">
-                <Image
-                  className="oc-wordmark"
-                  src="/assets/opencode-wordmark.svg"
-                  alt="OpenCode"
-                  width={234}
-                  height={42}
-                  priority
-                />
-                <div className="oc-start-composer">
-                  <div className="oc-start-input">
-                    <span className="oc-prompt-icon">A⌁</span>
-                    <span className="oc-typed-query">{typedQuery}</span>
+              <div className="claude-start-screen">
+                <div className="claude-identity">
+                  <Image
+                    className="claude-mascot"
+                    src="/assets/claude-code.svg"
+                    alt="Claude Code mascot"
+                    width={76}
+                    height={76}
+                    priority
+                  />
+                  <div>
+                    <strong>Claude Code <span>v2.1.17</span></strong>
+                    <p>Sonnet 4.5</p>
+                    <small>~/project/cherry</small>
+                  </div>
+                  <Image
+                    className="claude-mark"
+                    src="/assets/claude-mark.png"
+                    alt=""
+                    width={30}
+                    height={30}
+                  />
+                </div>
+                <div className="claude-start-composer">
+                  <div className="claude-start-input">
+                    <span className="claude-prompt-icon">❯</span>
+                    <span className="claude-typed-query">{typedQuery}</span>
                     <span className="terminal-caret" aria-hidden="true" />
                   </div>
-                  <div className="oc-start-meta">
-                    <span><i /> Build&nbsp; · &nbsp;<b>Claude Sonnet 4</b></span>
-                    <span className="oc-vercel-pill">
-                      Cherry Sponsored Ad · Vercel <kbd>P</kbd>
-                    </span>
+                  <div className="claude-start-meta">
+                    <span>Sonnet 4.5</span>
+                    <span>Deployment Expert MCP enabled</span>
                   </div>
-                  <div className="oc-start-shortcuts">
-                    <span>tab switch agent&nbsp;&nbsp; ctrl+p commands</span>
+                  <div className="claude-start-shortcuts">
+                    <span>? for shortcuts&nbsp;&nbsp; · &nbsp;&nbsp;shift+tab to cycle mode</span>
                     {showQueryEnter && (
                       <button
                         type="button"
                         onClick={() => setStep(2)}
-                        aria-label="Press Enter to submit OpenCode prompt"
+                        aria-label="Press Enter to submit Claude Code prompt"
                       >
                         Press Enter ↵
                       </button>
@@ -279,22 +310,55 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
               </div>
             ) : (
               <>
-                <div className="oc-task-title">
-                  <strong># Deploy this Next.js app</strong>
-                  <span>8,214&nbsp;&nbsp;12% ($0.08)</span>
+                <div className="claude-session-header">
+                  <div className="claude-session-brand">
+                    <Image src="/assets/claude-code.svg" alt="" width={34} height={34} />
+                    <div><strong>Claude Code</strong><span>Sonnet 4.5 · ~/project/cherry</span></div>
+                  </div>
+                  <span>Deployment Expert MCP</span>
                 </div>
 
-                <div className="oc-transcript" ref={transcriptRef}>
-                  <div className="oc-user-prompt">Help me deploy this Next.js app</div>
-                  <div className="oc-streamed-response" aria-live="polite">
-                    {OPEN_CODE_RESPONSE_LINES.map((line, index) => {
+                <div className="claude-transcript" ref={transcriptRef}>
+                  <div className="claude-user-prompt"><span>❯</span> Deploy this Next.js app using Deployment Expert MCP</div>
+                  <div className="claude-streamed-response" aria-live="polite">
+                    {CLAUDE_RESPONSE_LINES.map((line, index) => {
                       const visibleText = visibleResponseLine(index);
                       if (!visibleText) return null;
+
+                      if (line.kind === "mcp-ad") {
+                        return (
+                          <aside className="claude-mcp-ad" key={line.text}>
+                            <span>Cherry Sponsored Ad</span>
+                            <div><strong>Railway</strong><small>Sponsored deployment partner</small></div>
+                            <p>{visibleText}{visibleText.length < line.text.length && <i className="claude-stream-caret" />}</p>
+                          </aside>
+                        );
+                      }
+
+                      if (line.kind === "deployment-options") {
+                        return (
+                          <section className="claude-deployment-options" key={line.text}>
+                            <p>{visibleText}{visibleText.length < line.text.length && <i className="claude-stream-caret" />}</p>
+                            <div className="claude-deployment-option">
+                              <div><strong>Vercel</strong><small>Zero-config Next.js deployment</small></div>
+                            </div>
+                            <div className="claude-deployment-option">
+                              <div><strong>Render</strong><small>Managed web service with simple scaling</small></div>
+                            </div>
+                            <div className="claude-deployment-option sponsored">
+                              <div className="claude-option-heading"><strong>Railway</strong><span>Cherry Sponsored Ad</span></div>
+                              <p>Managed builds, environment variables, and preview environments. Get $5 in free credits.</p>
+                              {visibleText.length === line.text.length && <button type="button">Set up Railway and get started →</button>}
+                            </div>
+                          </section>
+                        );
+                      }
+
                       return (
-                        <p className={`oc-stream-line oc-stream-${line.kind}`} key={line.text}>
+                        <p className={`claude-stream-line claude-stream-${line.kind}`} key={line.text}>
                           {visibleText}
                           {visibleText.length < line.text.length && (
-                            <span className="oc-stream-caret" aria-hidden="true" />
+                            <span className="claude-stream-caret" aria-hidden="true" />
                           )}
                         </p>
                       );
@@ -302,14 +366,14 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
                   </div>
                 </div>
 
-                <div className="oc-composer-wrap">
-                  <div className="oc-followup">
-                    <span className="oc-block-cursor" aria-hidden="true" />
-                    <div className="oc-followup-meta">
-                      <span><b>Build</b>&nbsp;&nbsp; Claude Opus 4.5&nbsp;&nbsp; <em>OpenCode Zen</em></span>
+                <div className="claude-composer-wrap">
+                  <div className="claude-followup">
+                    <span>❯</span>
+                    <div className="claude-followup-meta">
+                      <span>Sonnet 4.5</span><span>Deployment Expert MCP connected</span>
                     </div>
                   </div>
-                  <div className="oc-shortcuts"><span><i>········</i>&nbsp;&nbsp; esc interrupt</span><span>ctrl+t variants&nbsp;&nbsp; tab agents&nbsp;&nbsp; ctrl+p commands</span></div>
+                  <div className="claude-shortcuts"><span>esc to interrupt</span><span>shift+tab cycle mode&nbsp;&nbsp; · &nbsp;&nbsp;? shortcuts</span></div>
                 </div>
               </>
             )}
@@ -602,14 +666,110 @@ function MiroDemo({ onClose }: { onClose: () => void }) {
   );
 }
 
-function OllamaDemo({ onClose }: { onClose: () => void }) {
+function ChatGPTDemo({ onClose }: { onClose: () => void }) {
   const [sent, setSent] = useState(false);
+  const [typedPrompt, setTypedPrompt] = useState("");
+  const [showEnter, setShowEnter] = useState(false);
+  const [responseStep, setResponseStep] = useState(-1);
+  const prompt = "Help me build a private AI assistant for my documents";
+
+  useEffect(() => {
+    if (sent || typedPrompt === prompt) return;
+    const timer = window.setTimeout(
+      () => setTypedPrompt(prompt.slice(0, typedPrompt.length + 1)),
+      42,
+    );
+    return () => window.clearTimeout(timer);
+  }, [prompt, sent, typedPrompt]);
+
+  useEffect(() => {
+    if (sent || typedPrompt !== prompt) return;
+    const timer = window.setTimeout(() => setShowEnter(true), 2000);
+    return () => window.clearTimeout(timer);
+  }, [prompt, sent, typedPrompt]);
+
+  useEffect(() => {
+    if (!sent) return;
+    const timers = [
+      window.setTimeout(() => setResponseStep(0), 700),
+      window.setTimeout(() => setResponseStep(1), 1200),
+      window.setTimeout(() => setResponseStep(2), 1700),
+      window.setTimeout(() => setResponseStep(3), 2200),
+      window.setTimeout(() => setResponseStep(4), 2700),
+      window.setTimeout(() => setResponseStep(5), 3400),
+    ];
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [sent]);
+
+  useEffect(() => {
+    if (sent || !showEnter) return;
+    const submitOnEnter = (event: KeyboardEvent) => {
+      if (event.key === "Enter") setSent(true);
+    };
+    window.addEventListener("keydown", submitOnEnter);
+    return () => window.removeEventListener("keydown", submitOnEnter);
+  }, [sent, showEnter]);
 
   return (
-    <WindowShell app="ollama" title="Ollama" onClose={onClose}>
-      <div className="ollama-app">
-        <aside><div className="ollama-wordmark">🦙 <strong>ollama</strong></div><button type="button">＋ New chat</button><small>Today</small><p className="active">Private document assistant</p><p>Model benchmarks</p><div className="ollama-model">● llama3.2:latest</div></aside>
-        <section><header><strong>Private document assistant</strong><span>Local</span></header><div className="ollama-chat"><div className="ollama-welcome"><span>🦙</span><strong>How can I help?</strong><p>Messages and model inference stay on this device.</p></div>{sent && <><div className="ollama-user">Help me build a private AI assistant for my documents</div><div className="ollama-answer"><strong>Recommended local-first architecture</strong><ol><li>Run the language model locally with Ollama.</li><li>Parse and chunk documents on-device.</li><li>Create embeddings and store them in a local vector database.</li><li>Retrieve only relevant chunks for each question.</li></ol><SponsoredCard brand="Pinecone" copy="Add scalable vector search when your document collection grows." action="Explore Pinecone →" /></div></>}</div>{!sent && <div className="ollama-compose"><textarea value="Help me build a private AI assistant for my documents" readOnly /><div><span>llama3.2</span><button type="button" onClick={() => setSent(true)}>↑</button></div></div>}</section>
+    <WindowShell app="chatgpt" title="ChatGPT" onClose={onClose}>
+      <div className="chatgpt-app">
+        <aside className="chatgpt-sidebar" aria-label="ChatGPT navigation">
+          <Image src="/assets/chatgpt.png" alt="ChatGPT" width={30} height={30} />
+          <button type="button" aria-label="New chat"><PencilLineIcon size={22} /></button>
+          <button type="button" aria-label="Search"><MagnifyingGlassIcon size={22} /></button>
+          <button type="button" aria-label="Pinned chats"><PushPinIcon size={22} /></button>
+          <button type="button" aria-label="Chats"><ChatCircleIcon size={22} /></button>
+          <span className="chatgpt-avatar">GL</span>
+        </aside>
+
+        <main className="chatgpt-main">
+          <header className="chatgpt-topbar">
+            <div className="chatgpt-mode-switch"><button className="active" type="button">Chat</button><button type="button">Work</button></div>
+            <ChatCircleIcon size={22} />
+          </header>
+
+          {!sent ? (
+            <section className="chatgpt-start">
+              <h2>Hey. Ready to dive in?</h2>
+              <div className="chatgpt-composer">
+                <PlusIcon size={22} />
+                <span className="chatgpt-prompt">{typedPrompt}<i /></span>
+                <button className="chatgpt-model" type="button">Instant <CaretDownIcon size={14} /></button>
+                <MicrophoneIcon size={21} />
+                <div className={`chatgpt-enter-cue ${showEnter ? "visible" : ""}`}>Press Enter ↵</div>
+                <button className="chatgpt-voice" type="button" onClick={() => setSent(true)} aria-label="Send prompt"><span /><span /><span /><span /></button>
+              </div>
+              <div className="chatgpt-suggestions">
+                <button type="button">▧ <span>Create an image</span></button>
+                <button type="button"><PencilLineIcon size={20} /> <span>Write or edit</span></button>
+                <button type="button">◎ <span>Search the web</span></button>
+              </div>
+            </section>
+          ) : (
+            <section className="chatgpt-thread">
+              <div className="chatgpt-thread-inner">
+                <p className="chatgpt-user-message">{prompt}</p>
+                <article className="chatgpt-response">
+                  <Image src="/assets/chatgpt.png" alt="" width={30} height={30} />
+                  <div>
+                    {responseStep < 0 && <div className="chatgpt-thinking"><i /><i /><i /></div>}
+                    {responseStep >= 0 && <strong className="chatgpt-reveal">Here’s a clean way to structure it:</strong>}
+                    <ol>
+                      {responseStep >= 1 && <li className="chatgpt-reveal">Parse and chunk each document as it is uploaded.</li>}
+                      {responseStep >= 2 && <li className="chatgpt-reveal">Create embeddings and store them in a vector index.</li>}
+                      {responseStep >= 3 && <li className="chatgpt-reveal">Retrieve only the most relevant passages for every question.</li>}
+                      {responseStep >= 4 && <li className="chatgpt-reveal">Send those passages to your model with clear source citations.</li>}
+                    </ol>
+                    {responseStep >= 5 && <div className="chatgpt-reveal chatgpt-ad-reveal"><SponsoredCard brand="Pinecone" copy="Add production-ready vector search as your document collection grows." action="Explore Pinecone →" /></div>}
+                  </div>
+                </article>
+              </div>
+              <div className="chatgpt-composer chatgpt-followup">
+                <PlusIcon size={22} /><span>Ask anything</span><MicrophoneIcon size={21} /><button className="chatgpt-send" type="button"><PaperPlaneRightIcon size={18} weight="fill" /></button>
+              </div>
+            </section>
+          )}
+        </main>
       </div>
     </WindowShell>
   );
@@ -739,7 +899,7 @@ export function AppWalkthrough({ app, appName, onClose }: AppWalkthroughProps) {
     case "whatsapp": return <WhatsAppDemo onClose={onClose} />;
     case "discord": return <DiscordDemo onClose={onClose} />;
     case "miro": return <MiroDemo onClose={onClose} />;
-    case "ollama": return <OllamaDemo onClose={onClose} />;
+    case "chatgpt": return <ChatGPTDemo onClose={onClose} />;
     case "cursor": return <CursorDemo onClose={onClose} />;
     case "scribble": return <ScribbleDemo appName={appName} onClose={onClose} />;
   }

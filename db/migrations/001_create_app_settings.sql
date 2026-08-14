@@ -16,7 +16,7 @@ VALUES (
       'whatsapp', true,
       'discord', true,
       'miro', true,
-      'ollama', true,
+      'chatgpt', true,
       'cursor', true,
       'scribble', true
     )

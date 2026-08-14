@@ -3,7 +3,7 @@ export const APP_EXAMPLE_KEYS = [
   "whatsapp",
   "discord",
   "miro",
-  "ollama",
+  "chatgpt",
   "cursor",
   "scribble",
 ] as const;
@@ -16,7 +16,7 @@ export const APP_EXAMPLE_LABELS: Record<AppExampleKey, string> = {
   whatsapp: "WhatsApp",
   discord: "Discord",
   miro: "Miro",
-  ollama: "Ollama",
+  chatgpt: "ChatGPT",
   cursor: "Cursor",
   scribble: "Scribble",
 };
@@ -26,7 +26,7 @@ export const DEFAULT_APP_EXAMPLES: AppExamples = {
   whatsapp: true,
   discord: true,
   miro: true,
-  ollama: true,
+  chatgpt: true,
   cursor: true,
   scribble: true,
 };
