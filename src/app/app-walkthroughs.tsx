@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import type { AppExampleKey } from "@/lib/app-examples";
 import { ArchiveIcon } from "@phosphor-icons/react/dist/csr/Archive";
@@ -34,6 +34,16 @@ type AppWalkthroughProps = {
   appName: string;
   onClose: () => void;
 };
+
+const AppNameContext = createContext("Cherry");
+
+function useAppName() {
+  return useContext(AppNameContext);
+}
+
+function toProjectSlug(appName: string) {
+  return appName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "project";
+}
 
 function WindowShell({
   app,
@@ -75,9 +85,11 @@ function SponsoredCard({
   copy: string;
   action: string;
 }) {
+  const appName = useAppName();
+
   return (
     <aside className="sponsored-card">
-      <span className="sponsored-label">Cherry Sponsored Ad</span>
+      <span className="sponsored-label">{appName} Sponsored Ad</span>
       <div className="sponsored-copy">
         <strong>{brand}</strong>
         <p>{copy}</p>
@@ -110,6 +122,8 @@ const CLAUDE_RESPONSE_LINES = [
 ] as const;
 
 function TerminalDemo({ onClose }: { onClose: () => void }) {
+  const appName = useAppName();
+  const projectSlug = toProjectSlug(appName);
   const [step, setStep] = useState(0);
   const [typedCommand, setTypedCommand] = useState("");
   const [showEnterHint, setShowEnterHint] = useState(false);
@@ -242,7 +256,7 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
             <div className="terminal-history">
               <p className="terminal-muted">Last login: today on ttys001</p>
               <p className="terminal-shell-prompt">
-                cherry@studio ~ %&nbsp;
+                {projectSlug}@studio ~ %&nbsp;
                 <span className="terminal-typed-command">{typedCommand}</span>
                 <span className="terminal-caret" aria-hidden="true" />
               </p>
@@ -274,7 +288,7 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
                   <div>
                     <strong>Claude Code <span>v2.1.17</span></strong>
                     <p>Sonnet 4.5</p>
-                    <small>~/project/cherry</small>
+                    <small>~/project/{projectSlug}</small>
                   </div>
                   <Image
                     className="claude-mark"
@@ -313,7 +327,7 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
                 <div className="claude-session-header">
                   <div className="claude-session-brand">
                     <Image src="/assets/claude-code.svg" alt="" width={34} height={34} />
-                    <div><strong>Claude Code</strong><span>Sonnet 4.5 · ~/project/cherry</span></div>
+                    <div><strong>Claude Code</strong><span>Sonnet 4.5 · ~/project/{projectSlug}</span></div>
                   </div>
                   <span>Deployment Expert MCP</span>
                 </div>
@@ -328,7 +342,7 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
                       if (line.kind === "mcp-ad") {
                         return (
                           <aside className="claude-mcp-ad" key={line.text}>
-                            <span>Cherry Sponsored Ad</span>
+                            <span>{appName} Sponsored Ad</span>
                             <div><strong>Railway</strong><small>Sponsored deployment partner</small></div>
                             <p>{visibleText}{visibleText.length < line.text.length && <i className="claude-stream-caret" />}</p>
                           </aside>
@@ -346,7 +360,7 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
                               <div><strong>Render</strong><small>Managed web service with simple scaling</small></div>
                             </div>
                             <div className="claude-deployment-option sponsored">
-                              <div className="claude-option-heading"><strong>Railway</strong><span>Cherry Sponsored Ad</span></div>
+                              <div className="claude-option-heading"><strong>Railway</strong><span>{appName} Sponsored Ad</span></div>
                               <p>Managed builds, environment variables, and preview environments. Get $5 in free credits.</p>
                               {visibleText.length === line.text.length && <button type="button">Set up Railway and get started →</button>}
                             </div>
@@ -385,6 +399,7 @@ function TerminalDemo({ onClose }: { onClose: () => void }) {
 }
 
 function WhatsAppDemo({ onClose }: { onClose: () => void }) {
+  const appName = useAppName();
   const query = "Plan a 7-day trip to Japan for me";
   const [typedMessage, setTypedMessage] = useState("");
   const [showEnter, setShowEnter] = useState(false);
@@ -488,8 +503,8 @@ function WhatsAppDemo({ onClose }: { onClose: () => void }) {
                 {phase === 2 && <div className="wa-typing" aria-label="Flight Assistant is typing"><i /><i /><i /></div>}
                 {phase >= 3 && <div className="wa-bubble incoming wa-itinerary"><strong>I’ve planned your 7-day Japan itinerary 🇯🇵</strong><p><b>Days 1–3 · Tokyo</b><br />Explore Meiji Shrine and Shibuya, join an evening food tour, then take a day trip toward Mount Fuji.</p><time>10:32 PM</time></div>}
                 {phase >= 4 && <div className="wa-bubble incoming wa-itinerary"><p><b>Day 4 · Hakone</b><br />Ride the mountain railway, see Lake Ashi, and unwind at an onsen.<br /><br /><b>Days 5–7 · Kyoto</b><br />Visit Fushimi Inari early, eat through Nishiki Market, and finish in Arashiyama.</p><time>10:32 PM</time></div>}
-                {phase >= 5 && <article className="wa-sponsored"><div className="wa-ad-image"><span>JAPAN</span><strong>Stay connected from touchdown.</strong></div><div className="wa-ad-copy"><small>Cherry Sponsored Ad</small><strong>Airalo</strong><p>10 GB Japan eSIM · 30 days<br />Instant activation before your flight.</p><time>10:33 PM</time></div><button type="button">View Japan plans</button></article>}
-                {phase >= 6 && <article className="wa-bot-actions"><div className="wa-action-copy"><strong>Want me to start organizing it?</strong><p>I can help with the next steps from this itinerary.</p><time>10:33 PM</time></div><button type="button">Find flights</button><button type="button">Book hotels</button><button type="button">Reserve experiences</button><button className="wa-sponsored-action" type="button">Buy my Japan eSIM</button><small>Cherry Sponsored Ad · Airalo</small></article>}
+                {phase >= 5 && <article className="wa-sponsored"><div className="wa-ad-image"><span>JAPAN</span><strong>Stay connected from touchdown.</strong></div><div className="wa-ad-copy"><small>{appName} Sponsored Ad</small><strong>Airalo</strong><p>10 GB Japan eSIM · 30 days<br />Instant activation before your flight.</p><time>10:33 PM</time></div><button type="button">View Japan plans</button></article>}
+                {phase >= 6 && <article className="wa-bot-actions"><div className="wa-action-copy"><strong>Want me to start organizing it?</strong><p>I can help with the next steps from this itinerary.</p><time>10:33 PM</time></div><button type="button">Find flights</button><button type="button">Book hotels</button><button type="button">Reserve experiences</button><button className="wa-sponsored-action" type="button">Buy my Japan eSIM</button><small>{appName} Sponsored Ad · Airalo</small></article>}
               </>
             )}
           </div>
@@ -508,6 +523,8 @@ function WhatsAppDemo({ onClose }: { onClose: () => void }) {
 }
 
 function DiscordDemo({ onClose }: { onClose: () => void }) {
+  const appName = useAppName();
+  const playerName = `${toProjectSlug(appName)}player`;
   const query = "What should we play together tonight?";
   const [typedMessage, setTypedMessage] = useState("");
   const [showEnter, setShowEnter] = useState(false);
@@ -573,7 +590,7 @@ function DiscordDemo({ onClose }: { onClose: () => void }) {
           <p><HashIcon size={15} /> general</p><p className="active"><HashIcon size={15} /> game-night <UserPlusIcon size={13} /><GearIcon size={13} /></p><p><HashIcon size={15} /> clips</p>
           <small>GAME ROOMS</small><p><HashIcon size={15} /> looking-for-group</p><p><HashIcon size={15} /> screenshots</p>
           <small>VOICE CHANNELS</small><p><SpeakerHighIcon size={15} /> Lobby</p><p><SpeakerHighIcon size={15} /> Ranked</p>
-          <footer><Image src="/assets/discord-user-cherry.png" alt="" width={30} height={30} /><div><strong>cherryplayer</strong><small>Online</small></div><MicrophoneIcon size={15} /><HeadphonesIcon size={15} /><GearIcon size={15} /></footer>
+          <footer><Image src="/assets/discord-user-cherry.png" alt="" width={30} height={30} /><div><strong>{playerName}</strong><small>Online</small></div><MicrophoneIcon size={15} /><HeadphonesIcon size={15} /><GearIcon size={15} /></footer>
         </aside>
         <header className="discord-main-header"><HashIcon size={18} /><strong>game-night</strong><span>Pick tonight’s game with the squad</span><nav><BellIcon size={17} /><PushPinIcon size={17} /><UsersThreeIcon size={18} /><div><span>Search Game Night</span><MagnifyingGlassIcon size={14} /></div></nav></header>
         <section className="discord-chat">
@@ -582,21 +599,22 @@ function DiscordDemo({ onClose }: { onClose: () => void }) {
             <div className="discord-message"><Image className="discord-avatar" src="/assets/discord-bot.png" alt="" width={34} height={34} /><div><strong>Game Night Bot <em>APP</em></strong><small>Today at 8:30 PM</small><p>Ready when you are. Ask me to plan tonight’s session!</p></div></div>
             {phase >= 1 && (
               <>
-                <div className="discord-message"><Image className="discord-avatar" src="/assets/discord-user-cherry.png" alt="" width={38} height={38} /><div><strong>cherryplayer</strong><small>Today at 8:31 PM</small><p>{query}</p></div></div>
+                <div className="discord-message"><Image className="discord-avatar" src="/assets/discord-user-cherry.png" alt="" width={38} height={38} /><div><strong>{playerName}</strong><small>Today at 8:31 PM</small><p>{query}</p></div></div>
                 {phase === 2 && <div className="discord-typing"><Image className="discord-avatar" src="/assets/discord-bot.png" alt="" width={34} height={34} /><div><i /><i /><i /></div><small>Game Night Bot is typing…</small></div>}
-                {phase >= 3 && <div className="discord-message"><Image className="discord-avatar" src="/assets/discord-bot.png" alt="" width={34} height={34} /><div><strong>Game Night Bot <em>APP</em></strong><small>Today at 8:31 PM</small><p>Let’s put it to a squad vote. Pick tonight’s game:</p><div className="discord-poll">{phase >= 3 && <button type="button">🚀 <span><strong>Helldivers 2</strong><small>Co-op action · 4 players</small></span></button>}{phase >= 4 && <button type="button">🏴‍☠️ <span><strong>Sea of Thieves</strong><small>Open-world adventure</small></span></button>}{phase >= 5 && <button type="button">⚽ <span><strong>Rocket League</strong><small>Quick matches · everyone welcome</small></span></button>}</div>{phase >= 6 && <div className="discord-embed"><i /><span>Cherry Sponsored Ad</span><strong>Xbox Game Pass</strong><p>Play hundreds of multiplayer games with your squad—including tonight’s picks.</p><div className="discord-xbox-art">XBOX <b>GAME PASS</b></div><button type="button">Explore games</button></div>}</div></div>}
+                {phase >= 3 && <div className="discord-message"><Image className="discord-avatar" src="/assets/discord-bot.png" alt="" width={34} height={34} /><div><strong>Game Night Bot <em>APP</em></strong><small>Today at 8:31 PM</small><p>Let’s put it to a squad vote. Pick tonight’s game:</p><div className="discord-poll">{phase >= 3 && <button type="button">🚀 <span><strong>Helldivers 2</strong><small>Co-op action · 4 players</small></span></button>}{phase >= 4 && <button type="button">🏴‍☠️ <span><strong>Sea of Thieves</strong><small>Open-world adventure</small></span></button>}{phase >= 5 && <button type="button">⚽ <span><strong>Rocket League</strong><small>Quick matches · everyone welcome</small></span></button>}</div>{phase >= 6 && <div className="discord-embed"><i /><span>{appName} Sponsored Ad</span><strong>Xbox Game Pass</strong><p>Play hundreds of multiplayer games with your squad—including tonight’s picks.</p><div className="discord-xbox-art">XBOX <b>GAME PASS</b></div><button type="button">Explore games</button></div>}</div></div>}
               </>
             )}
           </div>
           <div className="discord-compose"><PlusIcon size={18} /><div><span>{phase === 0 ? typedMessage : "Message #game-night"}</span>{phase === 0 && <i />}</div><GiftIcon size={17} /><GifIcon size={17} /><StickerIcon size={17} /><SmileyIcon size={17} />{showEnter && <button type="button" onClick={sendDiscordMessage}>Press Enter ↵</button>}</div>
         </section>
-        <aside className="discord-members"><small>ONLINE — 4</small><p><span className="member-avatar"><Image src="/assets/discord-bot.png" alt="" width={30} height={30} /><i /></span><span><strong>Game Night Bot <em>APP</em></strong><small>Planning tonight’s game</small></span></p><p><Image src="/assets/discord-user-luna.png" alt="" width={30} height={30} /><span><strong>Luna</strong><small>Playing Stardew Valley</small></span></p><p><Image src="/assets/discord-user-milo.png" alt="" width={30} height={30} /><span><strong>Milo</strong><small>Online</small></span></p><p><Image src="/assets/discord-user-cherry.png" alt="" width={30} height={30} /><span><strong>cherryplayer</strong><small>Online</small></span></p><small>OFFLINE — 2</small><p className="offline"><Image src="/assets/discord-user-nova.png" alt="" width={30} height={30} /><span><strong>Nova</strong></span></p></aside>
+        <aside className="discord-members"><small>ONLINE — 4</small><p><span className="member-avatar"><Image src="/assets/discord-bot.png" alt="" width={30} height={30} /><i /></span><span><strong>Game Night Bot <em>APP</em></strong><small>Planning tonight’s game</small></span></p><p><Image src="/assets/discord-user-luna.png" alt="" width={30} height={30} /><span><strong>Luna</strong><small>Playing Stardew Valley</small></span></p><p><Image src="/assets/discord-user-milo.png" alt="" width={30} height={30} /><span><strong>Milo</strong><small>Online</small></span></p><p><Image src="/assets/discord-user-cherry.png" alt="" width={30} height={30} /><span><strong>{playerName}</strong><small>Online</small></span></p><small>OFFLINE — 2</small><p className="offline"><Image src="/assets/discord-user-nova.png" alt="" width={30} height={30} /><span><strong>Nova</strong></span></p></aside>
       </div>
     </WindowShell>
   );
 }
 
 function MiroDemo({ onClose }: { onClose: () => void }) {
+  const appName = useAppName();
   const prompt = "Create a launch plan for a new fitness app";
   const loadingMessages = ["Understanding your launch goals…", "Organizing milestones…", "Building your launch board…"];
   const [step, setStep] = useState(0);
@@ -649,14 +667,14 @@ function MiroDemo({ onClose }: { onClose: () => void }) {
         <aside className="miro-toolbar"><button type="button" aria-label="Miro AI">✦</button><button className="active" type="button">➤</button><button type="button">▣</button><button type="button">▢</button><button type="button">T</button><button type="button">◇</button><button type="button">✎</button><button type="button">＋</button></aside>
         <div className="miro-board">
           {step === 0 && <div className="miro-empty"><span>✦</span><strong>Create with Miro AI</strong><p>Describe the board you want to build.</p><div><div className="miro-prompt"><span>{typedPrompt}</span><i /></div><button type="button" onClick={generateBoard}>Generate</button></div>{showEnter && <small>Press Enter ↵</small>}</div>}
-          {step === 1 && <div className="miro-generating"><div className="miro-generation-status"><div className="miro-spinner" /><div><small>MIRO AI</small><strong>{loadingMessages[loadingMessage]}</strong></div></div><div className="miro-progress"><i /></div><aside className="miro-loading-sponsor"><div><div className="miro-sponsor-title"><strong>RevenueCat</strong><span className="miro-sponsor-pill">Cherry Sponsored Ad</span></div><p>Subscriptions and trials for mobile apps</p></div><button type="button">Learn more ↗</button></aside></div>}
+          {step === 1 && <div className="miro-generating"><div className="miro-generation-status"><div className="miro-spinner" /><div><small>MIRO AI</small><strong>{loadingMessages[loadingMessage]}</strong></div></div><div className="miro-progress"><i /></div><aside className="miro-loading-sponsor"><div><div className="miro-sponsor-title"><strong>RevenueCat</strong><span className="miro-sponsor-pill">{appName} Sponsored Ad</span></div><p>Subscriptions and trials for mobile apps</p></div><button type="button">Learn more ↗</button></aside></div>}
           {step === 2 && <div className="miro-canvas">
             <div className="miro-board-title"><small>PRODUCT LAUNCH</small><strong>FitFlow launch plan</strong><span>Six-week go-to-market workspace</span></div>
             <section className="miro-frame miro-goals"><header><strong>Launch goals</strong><span>3 notes</span></header><div><i>Reach 10k installs</i><i>Validate premium plan</i><i>Build a referral loop</i></div></section>
             <section className="miro-frame miro-timeline"><header><strong>Six-week timeline</strong><span>May — June</span></header><div className="miro-track"><b>Research</b><b>Beta</b><b>Creator launch</b><b>Release</b></div><div className="miro-week-labels"><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>W5</span><span>W6</span></div></section>
             <section className="miro-frame miro-channels"><header><strong>Launch channels</strong><span>Owner</span></header><p><i>●</i> App Store optimization <b>Jordan</b></p><p><i>●</i> Fitness creators <b>Maya</b></p><p><i>●</i> Community challenge <b>Alex</b></p></section>
             <section className="miro-frame miro-metrics"><header><strong>Success metrics</strong></header><div><span><b>10k</b> installs</span><span><b>32%</b> activation</span><span><b>18%</b> paid</span></div></section>
-            <aside className="miro-drag-sponsor"><span className="miro-sponsor-pill">Cherry Sponsored Ad</span><strong>RevenueCat</strong><p>Add subscriptions and trials to FitFlow.</p><button type="button">Explore setup →</button></aside>
+            <aside className="miro-drag-sponsor"><span className="miro-sponsor-pill">{appName} Sponsored Ad</span><strong>RevenueCat</strong><p>Add subscriptions and trials to FitFlow.</p><button type="button">Explore setup →</button></aside>
             <div className="miro-ai-cursor"><i /><span>Miro AI</span></div>
           </div>}
           <div className="miro-zoom"><button type="button">☷</button><button type="button">−</button><b>82%</b><button type="button">＋</button><button type="button">?</button></div>
@@ -776,6 +794,7 @@ function ChatGPTDemo({ onClose }: { onClose: () => void }) {
 }
 
 function CursorDemo({ onClose }: { onClose: () => void }) {
+  const appName = useAppName();
   const prompt = "Use Paper MCP to create a landing page for a productivity app";
   const [phase, setPhase] = useState(0);
   const [activityStage, setActivityStage] = useState(0);
@@ -830,7 +849,7 @@ function CursorDemo({ onClose }: { onClose: () => void }) {
     <WindowShell app="cursor" title="Cursor" onClose={onClose}>
       <div className={`cursor-app${phase >= 1 ? " cursor-plan-open" : ""}`}>
         <aside className="cursor-history"><header><strong>READY FOR REVIEW</strong><span>5</span></header><div className="cursor-history-item"><i>✓</i><div><strong>Build Landing Page</strong><span className="green">+70</span><small>Done. Fonts reloaded in the browser.</small></div><time>1h</time></div><div className="cursor-history-item"><i>✓</i><div><strong>PyTorch MNIST Experiments</strong><span className="green">+135 -21</span><small>Done, configurable MNIST experiment.</small></div><time>2h</time></div><div className="cursor-history-item"><i>✓</i><div><strong>Set up Cursor Rules</strong><small>Perfect! I&apos;ve created a comprehensive plan.</small></div><time>4h</time></div><div className="cursor-history-item active"><i>✓</i><div><strong>Productivity Landing Page</strong>{phase === 2 && <span className="green">+68</span>}<small>{phase === 2 ? "Drafted implementation steps in feature-prd.md" : "Planning with Paper MCP"}</small></div><time>now</time></div></aside>
-        <section className="cursor-agent"><header><strong>Plan Productivity Landing Page</strong><span>⋯</span></header><div className="cursor-agent-body" ref={cursorBodyRef}>{phase >= 1 && <div className="cursor-user-prompt">{prompt}</div>}{phase >= 1 && <div className="cursor-activity"><p className={activityStage >= 1 ? "done" : "working"}><i />Thinking</p>{activityStage >= 1 && <p className={activityStage >= 2 ? "done" : "working"}><i />Reading the current project</p>}{activityStage >= 2 && <p className={activityStage >= 3 ? "done" : "working"}><i />Reviewing <code>page.tsx</code> and existing styles</p>}{activityStage >= 3 && <div className="cursor-paper-tool"><header><span className={phase === 2 ? "tool-check" : "tool-spinner"}>{phase === 2 ? "✓" : ""}</span><strong>paper · get_design_context</strong></header><p>{phase === 2 ? "Returned layout and component guidance" : "Gathering layout, typography, and component references…"}</p>{activityStage >= 4 && <aside className="cursor-mobbin-ad"><div><header className="cursor-mobbin-title"><strong>Mobbin</strong><span>Cherry Sponsored Ad</span></header><p>Browse proven landing-page patterns.</p></div><button type="button">View references ↗</button></aside>}</div>}</div>}{phase === 2 && <><div className="cursor-summary"><strong>Drafted implementation steps in <code>feature-prd.md</code>.</strong><p>Paper recommends a focused hero, benefits grid, social proof, and a high-contrast conversion section.</p></div><div className="cursor-question"><header><small>Questions</small><strong>Which visual direction should I use?</strong></header><button type="button"><i>1</i> Minimal and editorial</button><button type="button"><i>2</i> Bold product-led</button><button className="selected" type="button"><i>3</i> Use Paper&apos;s recommended direction</button><footer><span>Skip</span><button type="button">Continue</button></footer></div></>}</div><div className="cursor-composer"><div>{phase === 0 ? <><span>{typedPrompt}</span><i className="cursor-compose-caret" /></> : <span className="muted">Add follow-up…</span>}</div><footer><button type="button">Plan <CaretDownIcon size={8} weight="bold" /></button><button className="cursor-model" type="button">Grok 4.6 <CaretDownIcon size={8} /></button>{showEnter && <small>Press Enter ↵</small>}<button className="cursor-send" type="button" onClick={sendCursorPrompt}>↑</button></footer></div></section>
+        <section className="cursor-agent"><header><strong>Plan Productivity Landing Page</strong><span>⋯</span></header><div className="cursor-agent-body" ref={cursorBodyRef}>{phase >= 1 && <div className="cursor-user-prompt">{prompt}</div>}{phase >= 1 && <div className="cursor-activity"><p className={activityStage >= 1 ? "done" : "working"}><i />Thinking</p>{activityStage >= 1 && <p className={activityStage >= 2 ? "done" : "working"}><i />Reading the current project</p>}{activityStage >= 2 && <p className={activityStage >= 3 ? "done" : "working"}><i />Reviewing <code>page.tsx</code> and existing styles</p>}{activityStage >= 3 && <div className="cursor-paper-tool"><header><span className={phase === 2 ? "tool-check" : "tool-spinner"}>{phase === 2 ? "✓" : ""}</span><strong>paper · get_design_context</strong></header><p>{phase === 2 ? "Returned layout and component guidance" : "Gathering layout, typography, and component references…"}</p>{activityStage >= 4 && <aside className="cursor-mobbin-ad"><div><header className="cursor-mobbin-title"><strong>Mobbin</strong><span>{appName} Sponsored Ad</span></header><p>Browse proven landing-page patterns.</p></div><button type="button">View references ↗</button></aside>}</div>}</div>}{phase === 2 && <><div className="cursor-summary"><strong>Drafted implementation steps in <code>feature-prd.md</code>.</strong><p>Paper recommends a focused hero, benefits grid, social proof, and a high-contrast conversion section.</p></div><div className="cursor-question"><header><small>Questions</small><strong>Which visual direction should I use?</strong></header><button type="button"><i>1</i> Minimal and editorial</button><button type="button"><i>2</i> Bold product-led</button><button className="selected" type="button"><i>3</i> Use Paper&apos;s recommended direction</button><footer><span>Skip</span><button type="button">Continue</button></footer></div></>}</div><div className="cursor-composer"><div>{phase === 0 ? <><span>{typedPrompt}</span><i className="cursor-compose-caret" /></> : <span className="muted">Add follow-up…</span>}</div><footer><button type="button">Plan <CaretDownIcon size={8} weight="bold" /></button><button className="cursor-model" type="button">Grok 4.6 <CaretDownIcon size={8} /></button>{showEnter && <small>Press Enter ↵</small>}<button className="cursor-send" type="button" onClick={sendCursorPrompt}>↑</button></footer></div></section>
         <section className="cursor-prd"><header><span>feature-prd.md</span><i>×</i><span>page.tsx</span></header><div className="cursor-prd-meta"><span>Plans ›</span><strong>feature-prd.md</strong><b>Grok 4.6 <CaretDownIcon size={8} /></b><button type="button">Build</button></div><article className={phase >= 1 ? "writing" : ""}><h1>Productivity Landing Page</h1><p>Create a focused, conversion-oriented page for a modern productivity app.</p><h3>Page objective</h3><p>Communicate the product&apos;s value in under five seconds and guide visitors toward starting a free workspace.</p><h3>Recommended structure</h3><ol><li>Focused hero with one primary CTA</li><li>Three-column benefits grid</li><li>Customer logos and testimonial proof</li><li>High-contrast conversion section</li></ol><h3>Implementation tasks</h3><label><i /> Build the responsive hero in <code>page.tsx</code></label><label><i /> Add reusable benefit and testimonial cards</label><label><i /> Implement responsive states and polish</label></article></section>
       </div>
     </WindowShell>
@@ -887,20 +906,24 @@ function ScribbleDemo({ appName, onClose }: { appName: string; onClose: () => vo
     <WindowShell app="scribble" title="Scribble" onClose={onClose}>
       <div className="scribble-site">
         <iframe src="https://scribble.network/" title="Scribble Network website" loading="eager" scrolling="no" tabIndex={-1} />
-        {chatOpen ? <><div className="scribble-chat-scrim" aria-hidden="true" /><aside className="scribble-chat"><header><span className="scribble-fixed-logo" style={{ backgroundImage: `url(${FIXED_LOGO_URL})` }} aria-hidden="true" /><div><strong>{appName} Assistant</strong><small>Free AI answers supplemented by ads</small></div><button type="button" onClick={() => setChatOpen(false)} aria-label="Close assistant">×</button></header><div className="scribble-chat-body" ref={scribbleChatRef}><div className="scribble-bot-message">Hi there! 👋 How can I help you with Scribble?</div>{chatPhase >= 1 && <div className="scribble-user-message">{question}</div>}{chatPhase === 1 && <div className="scribble-thinking"><div><i /><i /><i /></div><span>{appName} is reading the Scribble docs…</span><aside><b /><div><strong>Algolia</strong><em>Cherry Sponsored Ad</em><p>Search that understands your documentation.</p></div><button type="button">Learn more ↗</button></aside></div>}{chatPhase === 2 && <div className="scribble-answer">{answerStage >= 1 && <p>Scribble helps brands turn product knowledge into structured, citation-ready content that both customers and AI systems can understand.</p>}{answerStage >= 2 && <p>It brings documentation, content publishing, creator distribution, and measurable brand visibility into one workflow.</p>}{answerStage >= 3 && <p>For faster discovery across those published pages, <strong>Algolia</strong> <span>Cherry Sponsored Ad</span> can index the documentation and provide instant, relevant search inside the product.</p>}</div>}</div><div className="scribble-chat-input"><input value={chatPhase === 0 ? typedQuestion : ""} placeholder={chatPhase === 0 ? "" : "Ask a follow-up…"} readOnly aria-label={`Ask ${appName} Assistant`} /><button type="button" onClick={sendQuestion} aria-label="Send message">↑</button></div><footer>Powered by {appName} Ad Network</footer></aside></> : <button className="scribble-launcher" type="button" onClick={openChat} aria-label={`Open ${appName} Assistant`}><ChatCircleIcon size={28} weight="fill" /></button>}
+        {chatOpen ? <><div className="scribble-chat-scrim" aria-hidden="true" /><aside className="scribble-chat"><header><span className="scribble-fixed-logo" style={{ backgroundImage: `url(${FIXED_LOGO_URL})` }} aria-hidden="true" /><div><strong>{appName} Assistant</strong><small>Free AI answers supplemented by ads</small></div><button type="button" onClick={() => setChatOpen(false)} aria-label="Close assistant">×</button></header><div className="scribble-chat-body" ref={scribbleChatRef}><div className="scribble-bot-message">Hi there! 👋 How can I help you with Scribble?</div>{chatPhase >= 1 && <div className="scribble-user-message">{question}</div>}{chatPhase === 1 && <div className="scribble-thinking"><div><i /><i /><i /></div><span>{appName} is reading the Scribble docs…</span><aside><b /><div><strong>Algolia</strong><em>{appName} Sponsored Ad</em><p>Search that understands your documentation.</p></div><button type="button">Learn more ↗</button></aside></div>}{chatPhase === 2 && <div className="scribble-answer">{answerStage >= 1 && <p>Scribble helps brands turn product knowledge into structured, citation-ready content that both customers and AI systems can understand.</p>}{answerStage >= 2 && <p>It brings documentation, content publishing, creator distribution, and measurable brand visibility into one workflow.</p>}{answerStage >= 3 && <p>For faster discovery across those published pages, <strong>Algolia</strong> <span>{appName} Sponsored Ad</span> can index the documentation and provide instant, relevant search inside the product.</p>}</div>}</div><div className="scribble-chat-input"><input value={chatPhase === 0 ? typedQuestion : ""} placeholder={chatPhase === 0 ? "" : "Ask a follow-up…"} readOnly aria-label={`Ask ${appName} Assistant`} /><button type="button" onClick={sendQuestion} aria-label="Send message">↑</button></div><footer>Powered by {appName} Ad Network</footer></aside></> : <button className="scribble-launcher" type="button" onClick={openChat} aria-label={`Open ${appName} Assistant`}><ChatCircleIcon size={28} weight="fill" /></button>}
       </div>
     </WindowShell>
   );
 }
 
 export function AppWalkthrough({ app, appName, onClose }: AppWalkthroughProps) {
+  let walkthrough: ReactNode;
+
   switch (app) {
-    case "terminal": return <TerminalDemo onClose={onClose} />;
-    case "whatsapp": return <WhatsAppDemo onClose={onClose} />;
-    case "discord": return <DiscordDemo onClose={onClose} />;
-    case "miro": return <MiroDemo onClose={onClose} />;
-    case "chatgpt": return <ChatGPTDemo onClose={onClose} />;
-    case "cursor": return <CursorDemo onClose={onClose} />;
-    case "scribble": return <ScribbleDemo appName={appName} onClose={onClose} />;
+    case "terminal": walkthrough = <TerminalDemo onClose={onClose} />; break;
+    case "whatsapp": walkthrough = <WhatsAppDemo onClose={onClose} />; break;
+    case "discord": walkthrough = <DiscordDemo onClose={onClose} />; break;
+    case "miro": walkthrough = <MiroDemo onClose={onClose} />; break;
+    case "chatgpt": walkthrough = <ChatGPTDemo onClose={onClose} />; break;
+    case "cursor": walkthrough = <CursorDemo onClose={onClose} />; break;
+    case "scribble": walkthrough = <ScribbleDemo appName={appName} onClose={onClose} />; break;
   }
+
+  return <AppNameContext.Provider value={appName}>{walkthrough}</AppNameContext.Provider>;
 }

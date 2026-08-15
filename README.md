@@ -1,4 +1,4 @@
-# Cherry
+# ads agent
 
 Password-gated Next.js demo with Neon-backed admin settings and fixed brand assets.
 

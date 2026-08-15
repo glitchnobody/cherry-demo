@@ -20,16 +20,16 @@ const siteUrl = configuredSiteUrl
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: 'Demo',
-  description: 'Project Cherry Demo',
+  description: 'ads agent Project Demo',
   openGraph: {
     title: 'Demo',
-    description: 'Project Cherry Demo',
+    description: 'ads agent Project Demo',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Demo',
-    description: 'Project Cherry Demo',
+    description: 'ads agent Project Demo',
   },
 };
 
